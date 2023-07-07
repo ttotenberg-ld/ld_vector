@@ -10,7 +10,7 @@
 type = "http_server"
 address = "0.0.0.0:8080"
 decoding.codec = "json"
-headers = ["authorization", "X-LaunchDarkly-Event-Schema", "user-agent"]
+headers = ["authorization", "X-LaunchDarkly-Event-Schema", "X-LaunchDarkly-Payload-ID", "user-agent"]
 method = "POST"
 path="/"
 strict_path = false
@@ -20,7 +20,7 @@ strict_path = false
 [transforms.ld_sdk_event_route]
 type = "route"
 inputs = ["incoming_ld_server_side_sdk_events"]
-route.forward_to_ld = '.kind != "feature" || .inExperiment == true || .path == "/diagnostic"'
+route.forward_to_ld = '.kind != "feature" || .inExperiment == true'
 route.export_from_ld = '.kind != "summary"' 
 
 [transforms.ld_sdk_events_clean]
@@ -32,6 +32,7 @@ del(.source_type)
 del(.timestamp)
 del(.path)
 del(."X-LaunchDarkly-Event-Schema")
+del(."X-LaunchDarkly-Payload-ID")
 del(."user-agent")
 '''
 
@@ -69,15 +70,83 @@ batch.timeout_secs = 5
 type = "remap"
 inputs = ["ld_sdk_event_route.export_from_ld"]
 source = '''
-.sdkLast6, err = slice(.authorization, -6)
-.ld_event_schema_version = del(."X-LaunchDarkly-Event-Schema")
-del(.authorization)
+.sdkKeySuffix, err = slice(del(.authorization), -6)
+if is_nullish(.sdkKeySuffix) {
+  .sdkKeySuffix = "unknown"
+}
+.ld_event_schema = del(."X-LaunchDarkly-Event-Schema")
+.ld_payload_id = del(."X-LaunchDarkly-Payload-ID")
+
+if is_nullish(.ld_event_schema) {
+  .ld_event_schema = "unknown"
+}
+if .kind == "diagnostic" {
+  if exists(.streamInits) {
+    streamInits = del(.streamInits)
+    .timestamp = .creationDate
+    ret = [.]
+    inits = map_values(array!(streamInits)) -> |value| { 
+      merge(object!(value), {
+        "timestamp" : value.timestamp,
+        "creationDate": .creationDate,
+        "dataSinceDate": .dataSinceDate,
+        "id": .id,
+        "isStreamInit": true,
+        "kind": "diagnostic",
+        "user-agent": ."user-agent",
+        "sdkKeySuffix": .sdkKeySuffix,
+        "ld_event_schema": .ld_event_schema,
+      })
+    }
+    . = append(ret, inits)
+  }
+}
 '''
 
+[transforms.ld_diagnostic_metric_route]
+type = "route"
+inputs = ["ld_sdk_events_export"]
+route.stream_init = '.kind == "diagnostic" && .isStreamInit == true'
+route.diagnostic = '.kind == "diagnostic" && !exists(.isStreamInit)'
+
+[transforms.ld_diagnostic_metrics]
+type = "log_to_metric"
+inputs = [ "ld_diagnostic_metric_route.diagnostic" ]
+  [[transforms.ld_diagnostic_metrics.metrics]]
+  type = "gauge"
+  field = "deduplicatedUsers"
+  namespace = "launchdarkly"
+  [[transforms.ld_diagnostic_metrics.metrics]]
+  type = "gauge"
+  field = "droppedEvents"
+  namespace = "launchdarkly"
+  [[transforms.ld_diagnostic_metrics.metrics]]
+  type = "gauge"
+  field = "eventsInLastBatch"
+  namespace = "launchdarkly"
+    [transforms.ld_diagnostic_metrics.metrics.tags]
+    sdkKeySuffix = "{{.sdkKeySuffix}}"
+    ldEventSchema = '{{.ld_event_schema}}'
+    kind = 'diagnostic'
+
+[transforms.ld_stream_init_metrics]
+type = "log_to_metric"
+inputs = [ "ld_diagnostic_metric_route.stream_init" ]
+  [[transforms.ld_stream_init_metrics.metrics]]
+  type = "gauge"
+  field = "durationMillis"
+  name = "initDurationMs"
+  namespace = "launchdarkly"
+
+  [transforms.ld_stream_init_metrics.metrics.tags]
+  sdkKeySuffix = "{{.sdkKeySuffix}}"
+  failed = "{{.failed}}"
+  ldEventSchema = '{{.ld_event_schema}}'
+  kind = 'diagnostic'
 
 
 # These are the events we want to send to a data destination
 [sinks.out]
-  inputs         = ["ld_sdk_events_export"]
+  inputs         = ["ld_diagnostic_metrics","ld_stream_init_metrics", "ld_sdk_events_export"]
   type           = "console"
   encoding.codec = "json"
