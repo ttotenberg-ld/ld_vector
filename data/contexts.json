@@ -1,0 +1,192 @@
+[
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-17fce4df-7aae-49ae-8133-fe214d40c5a5",
+      "os": "Android",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-42bb0707-8e64-481c-bf03-3842ffb973b4",
+      "name": "Baker Ltd",
+      "region": "CN"
+    },
+    "user": {
+      "key": "usr-493e3aef-6fec-41fc-81a1-fe0fe21b4b1b",
+      "name": "Nicole Davis",
+      "plan": "platinum",
+      "role": "writer"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-ce655847-950e-4b69-9136-4d62f2624f6c",
+      "os": "iOS",
+      "version": "1.0.2"
+    },
+    "organization": {
+      "key": "org-1c2b4636-3f9c-47dd-994a-99199dee3351",
+      "name": "Patterson Ltd",
+      "region": "CN"
+    },
+    "user": {
+      "key": "usr-e5346c8c-6376-4c61-838c-f3ac86a7ef33",
+      "name": "Anthony Williams",
+      "plan": "gold",
+      "role": "reader"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-15924c0f-275e-4485-9741-0f5abe6632d2",
+      "os": "Mac OS",
+      "version": "1.0.2"
+    },
+    "organization": {
+      "key": "org-9d4f3abf-3e7e-4507-b244-d67fb147fcda",
+      "name": "Love PLC",
+      "region": "EU"
+    },
+    "user": {
+      "key": "usr-31f9c332-fbcb-4436-95d9-bd6414f1fead",
+      "name": "Muriel Thomas",
+      "plan": "platinum",
+      "role": "reader"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-8ba82436-c21e-41ff-8f94-9c7da28ba4f6",
+      "os": "Windows",
+      "version": "1.0.7"
+    },
+    "organization": {
+      "key": "org-23bacfd6-bbce-4a54-bb39-61b0759c7d9f",
+      "name": "Hughes-Ellis",
+      "region": "IN"
+    },
+    "user": {
+      "key": "usr-4087071a-f0dd-4b2b-9a66-e5443d5539ae",
+      "name": "Ralph Gennaro",
+      "plan": "diamond",
+      "role": "admin"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-da441a0b-17ba-48b5-a7d7-1ea8e5a53dba",
+      "os": "Windows",
+      "version": "1.0.7"
+    },
+    "organization": {
+      "key": "org-52115cd0-6cf5-4431-8214-00d3ddfea85f",
+      "name": "Hall, Foster and Harper",
+      "region": "EU"
+    },
+    "user": {
+      "key": "usr-a9db94d1-9330-4542-868f-38577875a611",
+      "name": "James Muirhead",
+      "plan": "gold",
+      "role": "admin"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-1600d8ff-8e55-408c-8361-9050af0cc8f5",
+      "os": "Android",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-32ba3219-019f-4f78-87d4-6069b35246cf",
+      "name": "Reynolds-Nelson",
+      "region": "EU"
+    },
+    "user": {
+      "key": "usr-be660f86-94c0-4349-ac96-11cc0c7281b5",
+      "name": "Nigel Burt",
+      "plan": "platinum",
+      "role": "admin"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-9c5c11d9-7c05-4896-9de3-064307de5533",
+      "os": "Mac OS",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-ea272d71-e836-4433-b0d8-d96643ac993a",
+      "name": "Davis-Stafford",
+      "region": "IN"
+    },
+    "user": {
+      "key": "usr-720ca9e6-d145-4445-808f-94ba589279d5",
+      "name": "David Munos",
+      "plan": "platinum",
+      "role": "writer"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-1604bc38-8eaf-4f6d-8625-ee6539d081b7",
+      "os": "Android",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-95c17f35-2f68-4916-a98c-57a4bf17f251",
+      "name": "Compton LLC",
+      "region": "EU"
+    },
+    "user": {
+      "key": "usr-5e9f7e1f-484a-47c6-9839-6aa04bb74960",
+      "name": "Rose Holm",
+      "plan": "silver",
+      "role": "writer"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-df10bd80-499b-41f4-91de-8ca85d987d1b",
+      "os": "Windows",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-f85470ef-45f5-4a13-a9e2-8ad61807db52",
+      "name": "Huber and Sons",
+      "region": "NA"
+    },
+    "user": {
+      "key": "usr-2d291bc0-5ebf-47af-8a8f-2072315bff00",
+      "name": "Edith Raymond",
+      "plan": "platinum",
+      "role": "admin"
+    }
+  },
+  {
+    "kind": "multi",
+    "device": {
+      "key": "dvc-d3ed3c37-db47-43c3-b6f0-adba94feacd1",
+      "os": "iOS",
+      "version": "1.1.0"
+    },
+    "organization": {
+      "key": "org-7e452d80-e91f-49ce-9940-e84b430d8ae5",
+      "name": "Sanchez-Cortez",
+      "region": "SA"
+    },
+    "user": {
+      "key": "usr-51ccda15-1a27-475b-9610-10ea8a9f65b1",
+      "name": "Jesus Dewitt",
+      "plan": "platinum",
+      "role": "admin"
+    }
+  }
+]
