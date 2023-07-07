@@ -5,7 +5,7 @@
 1. In your terminal, run `curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash` to install Vector
 1. Verify that it's working with `vector --version`
 1. Run `export LD_SDK_KEY='YOUR-LD-SDK-KEY'`
-1. Run `vector --config vector_toml.py` to start Vector.
+1. Run `vector --config vector.toml` to start Vector.
 
 Leave that terminal instance running. This is the Vector service that's listening for LaunchDarkly events.
 
