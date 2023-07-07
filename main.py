@@ -13,7 +13,7 @@ ldclient.set_config(Config(sdk_key,events_uri='http://0.0.0.0:8080'))
 
 
 '''
-Load the contexts used for this
+Load the contexts used for this, evaluate the flag for each context, flush events, and shut down the SDK
 '''
 data = json.load(open("data/contexts.json"))
 

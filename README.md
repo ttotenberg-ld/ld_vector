@@ -14,4 +14,4 @@ Leave that terminal instance running. This is the Vector service that's listenin
 1. Run `python main.py`
 1. Look in your Vector terminal window to ensure LaunchDarkly events were captured and printed by Vector.
 
-If it ran successfully, you should see a `configuration` event, followed by `context` events.
+If it ran successfully, you should see a `configuration` event, followed by `context` and `contextKeys` events.
