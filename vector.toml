@@ -182,7 +182,6 @@ inputs = [ "ld_diagnostic_metric_route.stream_init" ]
 
 # These are the events we want to send to a data destination
 [sinks.out]
-  #inputs         = ["ld_diagnostic_metrics","ld_stream_init_metrics", "ld_sdk_events_export"]
-  inputs         = ["ld_sdk_server_side_forward_route.*"]
+  inputs         = ["ld_diagnostic_metrics","ld_stream_init_metrics", "ld_sdk_events_export"]
   type           = "console"
   encoding.codec = "json"
