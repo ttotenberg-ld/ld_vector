@@ -1,0 +1,7 @@
+del(.source_type)
+del(.timestamp)
+del(.path)
+del(."X-LaunchDarkly-Event-Schema")
+del(."X-LaunchDarkly-Payload-ID")
+del(."user-agent")
+del(.sdkKind)

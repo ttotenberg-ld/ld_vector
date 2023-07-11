@@ -1,0 +1,23 @@
+if exists(.authorization) {
+  if starts_with(string!(.authorization), "mob-") {
+    set_secret("ld_mobile_key", string!(del(.authorization)))
+    .sdkKind = "mobile"
+  } else if starts_with(string!(.authorization), "sdk-") {
+    set_secret("ld_sdk_key", string!(del(.authorization)))
+    .sdkKind = "server-side"
+  } else {
+    del(.authorization)
+  }
+} else {
+  parts = split!(.path, "/")
+  if length(parts) >= 3 && parts[0] == "events" && (parts[1] == "bulk" || parts[1] == "diagnostic") {
+    set_secret("ld_client_side_id", string!(parts[2]))
+    .sdkKind = "client-side"
+  } else if parts[0] == "a" && ends_with(string!(parts[1]), ".gif") {
+    set_secret("ld_client_side_id", string!(slice!(parts[1], -4)))
+    .sdkKind = "client-side"
+    . |= object!(parse_json!(decode_base64!(.d, charset: "url_safe")))
+  }
+}
+
+del(.d)
