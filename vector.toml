@@ -6,46 +6,69 @@
 
 # this example assumes you are routing only one SDK key to vector and only event schema 4
 # other events should be directly proxied to LD
-[sources.incoming_ld_server_side_sdk_events]
+[sources.incoming_ld_events]
 type = "http_server"
 address = "0.0.0.0:8080"
 decoding.codec = "json"
 headers = ["authorization", "X-LaunchDarkly-Event-Schema", "X-LaunchDarkly-Payload-ID", "user-agent"]
+query_parameters=["d"]
 method = "POST"
 path="/"
 strict_path = false
 
 
+[transforms.ld_sdk_event_parse]
+type = "remap"
+inputs = ["incoming_ld_events"]
+file="vrl/ld-parse.vrl"
+
 
 [transforms.ld_sdk_event_route]
 type = "route"
-inputs = ["incoming_ld_server_side_sdk_events"]
-route.forward_to_ld = '.kind != "feature" || .inExperiment == true'
-route.export_from_ld = '.kind != "summary"' 
+inputs = ["ld_sdk_event_parse"]
+route.client_side_forward = '.sdkKind == "client-side" && (.kind != "feature" || .inExperiment == true)'
+route.mobile_forward = '.sdkKind == "mobile" && (.kind != "feature" || .inExperiment == true)'
+route.server_side_forward = '.sdkKind == "server-side" && (.kind != "feature" || .inExperiment == true)'
+route.export_from_ld = '.kind != "summary"'
 
-[transforms.ld_sdk_events_clean]
+[transforms.ld_sdk_server_side_clean]
 type = "remap"
-inputs = ["ld_sdk_event_route.forward_to_ld"]
-source = '''
-del(.authorization)
-del(.source_type)
-del(.timestamp)
-del(.path)
-del(."X-LaunchDarkly-Event-Schema")
-del(."X-LaunchDarkly-Payload-ID")
-del(."user-agent")
-'''
+inputs = ["ld_sdk_event_route.server_side_forward"]
+file="vrl/ld-clean.vrl"
+
+[transforms.ld_sdk_client_side_clean]
+type = "remap"
+inputs = ["ld_sdk_event_route.client_side_forward"]
+file="vrl/ld-clean.vrl"
+
+[transforms.ld_sdk_mobile_clean]
+type = "remap"
+inputs = ["ld_sdk_event_route.mobile_forward"]
+file="vrl/ld-clean.vrl"
 
 
-[transforms.ld_sdk_forward_route]
+[transforms.ld_sdk_server_side_forward_route]
 type = "route"
-inputs = ["ld_sdk_events_clean"]
+inputs = ["ld_sdk_server_side_clean"]
 route.bulk = '.kind != "diagnostic" && .kind != "diagnostic-init"'
 route.diagnostic = '.kind == "diagnostic" || .kind == "diagnostic-init"'
 
+[transforms.ld_sdk_mobile_forward_route]
+type = "route"
+inputs = ["ld_sdk_mobile_clean"]
+route.bulk = '.kind != "diagnostic" && .kind != "diagnostic-init"'
+route.diagnostic = '.kind == "diagnostic" || .kind == "diagnostic-init"'
+
+[transforms.ld_sdk_client_side_forward_route]
+type = "route"
+inputs = ["ld_sdk_client_side_clean"]
+route.bulk = '.kind != "diagnostic" && .kind != "diagnostic-init"'
+route.diagnostic = '.kind == "diagnostic" || .kind == "diagnostic-init"'
+
+
 [sinks.ld_server_side_sdk_bulk]
 type = "http"
-inputs = ["ld_sdk_forward_route.bulk"]
+inputs = ["ld_sdk_server_side_forward_route.bulk"]
 encoding.codec = "json"
 method = "post"
 uri = "https://events.launchdarkly.com/bulk"
@@ -56,7 +79,7 @@ batch.timeout_secs = 5
 
 [sinks.ld_server_side_sdk_diagnostic]
 type = "http"
-inputs = ["ld_sdk_forward_route.diagnostic"]
+inputs = ["ld_sdk_server_side_forward_route.diagnostic"]
 encoding.codec = "json"
 method = "post"
 uri = "https://events.launchdarkly.com/diagnostic"
@@ -65,43 +88,53 @@ request.headers.x-launchdarkly-event-schema = "4"
 batch.max_events = 100
 batch.timeout_secs = 5
 
+[sinks.ld_client_side_sdk_bulk]
+type = "http"
+inputs = ["ld_sdk_client_side_forward_route.bulk"]
+encoding.codec = "json"
+method = "post"
+uri = "https://events.launchdarkly.com/bulk/${LD_CLIENT_SIDE_ID:?err}"
+request.headers.x-launchdarkly-event-schema = "4"
+batch.max_events = 1000
+batch.timeout_secs = 5
+
+[sinks.ld_client_side_sdk_diagnostic]
+type = "http"
+inputs = ["ld_sdk_client_side_forward_route.diagnostic"]
+encoding.codec = "json"
+method = "post"
+uri = "https://events.launchdarkly.com/diagnostic/${LD_CLIENT_SIDE_ID:?err}"
+request.headers.x-launchdarkly-event-schema = "4"
+batch.max_events = 100
+batch.timeout_secs = 5
+
+[sinks.ld_mobile_sdk_bulk]
+type = "http"
+inputs = ["ld_sdk_mobile_forward_route.bulk"]
+encoding.codec = "json"
+method = "post"
+uri = "https://events.launchdarkly.com/bulk"
+request.headers.authorization = "${LD_MOBILE_KEY:?err}"
+request.headers.x-launchdarkly-event-schema = "4"
+batch.max_events = 1000
+batch.timeout_secs = 5
+
+[sinks.ld_mobile_diagnostic]
+type = "http"
+inputs = ["ld_sdk_mobile_forward_route.diagnostic"]
+encoding.codec = "json"
+method = "post"
+uri = "https://events.launchdarkly.com/mobile/diagnostic"
+request.headers.authorization = "${LD_MOBILE_KEY:?err}"
+request.headers.x-launchdarkly-event-schema = "4"
+batch.max_events = 100
+batch.timeout_secs = 5
+
 
 [transforms.ld_sdk_events_export]
 type = "remap"
 inputs = ["ld_sdk_event_route.export_from_ld"]
-source = '''
-.sdkKeySuffix, err = slice(del(.authorization), -6)
-if is_nullish(.sdkKeySuffix) {
-  .sdkKeySuffix = "unknown"
-}
-.ld_event_schema = del(."X-LaunchDarkly-Event-Schema")
-.ld_payload_id = del(."X-LaunchDarkly-Payload-ID")
-
-if is_nullish(.ld_event_schema) {
-  .ld_event_schema = "unknown"
-}
-if .kind == "diagnostic" {
-  if exists(.streamInits) {
-    streamInits = del(.streamInits)
-    .timestamp = .creationDate
-    ret = [.]
-    inits = map_values(array!(streamInits)) -> |value| { 
-      merge(object!(value), {
-        "timestamp" : value.timestamp,
-        "creationDate": .creationDate,
-        "dataSinceDate": .dataSinceDate,
-        "id": .id,
-        "isStreamInit": true,
-        "kind": "diagnostic",
-        "user-agent": ."user-agent",
-        "sdkKeySuffix": .sdkKeySuffix,
-        "ld_event_schema": .ld_event_schema,
-      })
-    }
-    . = append(ret, inits)
-  }
-}
-'''
+file="vrl/ld-export.vrl"
 
 [transforms.ld_diagnostic_metric_route]
 type = "route"
@@ -125,9 +158,10 @@ inputs = [ "ld_diagnostic_metric_route.diagnostic" ]
   field = "eventsInLastBatch"
   namespace = "launchdarkly"
     [transforms.ld_diagnostic_metrics.metrics.tags]
-    sdkKeySuffix = "{{.sdkKeySuffix}}"
-    ldEventSchema = '{{.ld_event_schema}}'
+    ldCredential = "{{.ldCredential}}"
+    ldEventSchema = '{{.ldEventSchema}}'
     kind = 'diagnostic'
+    sdkKind = '{{.sdkKind}}'
 
 [transforms.ld_stream_init_metrics]
 type = "log_to_metric"
@@ -139,14 +173,16 @@ inputs = [ "ld_diagnostic_metric_route.stream_init" ]
   namespace = "launchdarkly"
 
   [transforms.ld_stream_init_metrics.metrics.tags]
-  sdkKeySuffix = "{{.sdkKeySuffix}}"
+  ldCredential = "{{.ldCredential}}"
   failed = "{{.failed}}"
-  ldEventSchema = '{{.ld_event_schema}}'
+  ldEventSchema = '{{.ldEventSchema}}'
+  sdkKind = '{{.sdkKind}}'
   kind = 'diagnostic'
 
 
 # These are the events we want to send to a data destination
 [sinks.out]
-  inputs         = ["ld_diagnostic_metrics","ld_stream_init_metrics", "ld_sdk_events_export"]
+  #inputs         = ["ld_diagnostic_metrics","ld_stream_init_metrics", "ld_sdk_events_export"]
+  inputs         = ["ld_sdk_server_side_forward_route.*"]
   type           = "console"
   encoding.codec = "json"

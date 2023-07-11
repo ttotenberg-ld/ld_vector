@@ -1,0 +1,46 @@
+if .sdkKind == "server-side" {
+  .sdkKeySuffix, err = slice(get_secret("ld_sdk_key"), -6)
+  .ldCredential = .sdkKeySuffix
+} else if .sdkKind == "mobile" {
+  .mobileKeySuffix, err = slice(get_secret("ld_mobile_key"), -6)
+  .ldCredential = .sdkKeySuffix
+} else if .sdkKind == "client-side" {
+  .clientSideId = get_secret("ld_client_side_id")
+  .ldCredential = .sdkKeySuffix
+}
+
+if is_nullish(.ldCredential) {
+  .ldCredential = "unknown"
+}
+
+if is_nullish(.sdkKind) {
+    .sdkKind = "unknown"
+}
+
+.ldEventSchema = del(."X-LaunchDarkly-Event-Schema")
+.ldPayloadId = del(."X-LaunchDarkly-Payload-ID")
+
+if is_nullish(.ldEventSchema) {
+  .ldEventSchema = "unknown"
+}
+if .kind == "diagnostic" {
+  if exists(.streamInits) {
+    streamInits = del(.streamInits)
+    .timestamp = .creationDate
+    ret = [.]
+    inits = map_values(array!(streamInits)) -> |value| { 
+      merge(object!(value), {
+        "timestamp" : value.timestamp,
+        "creationDate": .creationDate,
+        "dataSinceDate": .dataSinceDate,
+        "id": .id,
+        "isStreamInit": true,
+        "kind": "diagnostic",
+        "user-agent": ."user-agent",
+        "sdkKeySuffix": .sdkKeySuffix,
+        "ldEventSchema": .ldEventSchema,
+      })
+    }
+    . = append(ret, inits)
+  }
+}
